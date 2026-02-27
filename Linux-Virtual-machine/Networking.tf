@@ -11,7 +11,7 @@ resource "azurerm_subnet" "subnet" {
   name                 = var.subnet_name
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = var.subnet_prefixes
+address_prefixes     = [var.subnet_cidr]
 }
 
 # Network Interface
@@ -28,3 +28,4 @@ resource "azurerm_network_interface" "nic" {
     public_ip_address_id          = azurerm_public_ip.public_ip[each.key].id
   }
 }
+
