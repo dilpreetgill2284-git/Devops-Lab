@@ -10,10 +10,9 @@ variable "prefix" {
   default     = "dil"
 }
 
-variable "ssh_public_key_path" {
+variable "ssh_public_key" {
+  description = "OpenSSH-formatted public key text (the .pub line)"
   type        = string
-  description = "Full path to your SSH public key (.pub). Must include the filename."
-  default     = "C:/Terraform/LinuxVMHomework/Keys/azure_vm_rsa.pub"
 }
 
 variable "vnet_address_space" {
@@ -57,3 +56,4 @@ variable "vm_names" {
   type    = set(string)
   default = ["vm01", "vm02"]
 }
+
