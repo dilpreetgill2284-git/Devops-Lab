@@ -1,6 +1,6 @@
 # Public IP for the VM
 resource "azurerm_public_ip" "public_ip" {
-  for_each            = var.vm_names
+  for_each            = { for n in tolist(var.vm_names) : n => n if n == "vm-devops-01" }
   name                = "${var.prefix}-pip-${each.key}"
   location            = var.location
   resource_group_name = data.azurerm_resource_group.rg.name
@@ -29,7 +29,7 @@ resource "azurerm_network_security_group" "nsg" {
 
 # Associate NSG with NIC
 resource "azurerm_network_interface_security_group_association" "nic_nsg" {
-  for_each                  = var.vm_names
+  for_each                  = { for n in tolist(var.vm_names) : n => n if n == "vm-devops-01" }
   network_interface_id      = azurerm_network_interface.nic[each.key].id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
