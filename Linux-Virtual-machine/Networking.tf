@@ -29,3 +29,4 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+
