@@ -42,14 +42,14 @@ jobs:
           terraform_version: 1.7.5
 
       - name: Terraform Init
-        run: terraform init -input=false
+        run: terraform -chdir=Linux-Virtual-machine init -input=false
 
       - name: Terraform Validate
-        run: terraform validate -no-color
+        run: terraform -chdir=Linux-Virtual-machine validate -no-color
 
       # Keep as a single line to avoid YAML formatting mistakes
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -input=false -var "location=australiasoutheast" -var "resource_group_name=rg-devops-lab" -var "vnet_name=vnet-devops-lab" -var "vnet_cidr=10.10.0.0/16" -var "subnet_name=snet-devops-lab" -var "subnet_cidr=10.10.1.0/24" -var "vm_name=vm-devops-01" -var "vm_size=Standard_D2s_v3" -var "admin_username=azureuser" -var "prefix=dil-${{ github.run_number }}"
+        run: terraform -chdir=Linux-Virtual-machine plan -out=tfplan -input=false -var "location=australiasoutheast" -var "resource_group_name=rg-devops-lab" -var "vnet_name=vnet-devops-lab" -var "vnet_cidr=10.10.0.0/16" -var "subnet_name=snet-devops-lab" -var "subnet_cidr=10.10.1.0/24" -var "vm_name=vm-devops-01" -var "vm_size=Standard_D2s_v3" -var "admin_username=azureuser" -var "prefix=dil-${{ github.run_number }}"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false tfplan
+        run: terraform -chdir=Linux-Virtual-machine apply -auto-approve -input=false tfplan
