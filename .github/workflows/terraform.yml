@@ -2,18 +2,18 @@ name: Terraform Deploy to Azure
 
 on:
   push:
-    branches: [ main ]           # runs when you push/merge to main
-  workflow_dispatch:              # allows manual 'Run workflow' from Actions tab
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      id-token: write            # required for OIDC with azure/login
+      id-token: write
       contents: read
 
-    # Run all shell steps inside your Terraform folder
+    # All steps run inside your TF folder
     defaults:
       run:
         working-directory: Linux-Virtual-machine
@@ -22,12 +22,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Optional: quick check that your Variables are present (prints only lengths)
-      - name: Debug IDs presence
+      - name: Debug workspace
         run: |
-          echo "CLIENT_ID len=$(echo -n '${{ vars.AZURE_CLIENT_ID }}' | wc -c)"
-          echo "TENANT_ID len=$(echo -n '${{ vars.AZURE_TENANT_ID }}' | wc -c)"
-          echo "SUBSCRIPTION_ID len=$(echo -n '${{ vars.AZURE_SUBSCRIPTION_ID }}' | wc -c)"
+          echo "GITHUB_WORKSPACE=$(pwd)"
+          ls -la
+          echo "----"
+          ls -la Linux-Virtual-machine || true
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -42,14 +42,23 @@ jobs:
           terraform_version: 1.7.5
 
       - name: Terraform Init
-        run: terraform -chdir=Linux-Virtual-machine init -input=false
+        run: terraform init -input=false
 
       - name: Terraform Validate
-        run: terraform -chdir=Linux-Virtual-machine validate -no-color
+        run: terraform validate -no-color
 
-      # Keep as a single line to avoid YAML formatting mistakes
       - name: Terraform Plan
-        run: terraform -chdir=Linux-Virtual-machine plan -out=tfplan -input=false -var "location=australiasoutheast" -var "resource_group_name=rg-devops-lab" -var "vnet_name=vnet-devops-lab" -var "vnet_cidr=10.10.0.0/16" -var "subnet_name=snet-devops-lab" -var "subnet_cidr=10.10.1.0/24" -var "vm_name=vm-devops-01" -var "vm_size=Standard_D2s_v3" -var "admin_username=azureuser" -var "prefix=dil-${{ github.run_number }}"
+        run: terraform plan -out=tfplan -input=false \
+          -var "location=australiaeast" \
+          -var "resource_group_name=rg-devops-lab" \
+          -var "vnet_name=vnet-devops-lab" \
+          -var "vnet_cidr=10.10.0.0/16" \
+          -var "subnet_name=snet-devops-lab" \
+          -var "subnet_cidr=10.10.1.0/24" \
+          -var "vm_name=vm-devops-01" \
+          -var "vm_size=Standard_D2s_v3" \
+          -var "admin_username=azureuser" \
+          -var "prefix=dil-${{ github.run_number }}"
 
       - name: Terraform Apply
-        run: terraform -chdir=Linux-Virtual-machine apply -auto-approve -input=false tfplan
+        run: terraform apply -auto-approve -input=false tfplan
