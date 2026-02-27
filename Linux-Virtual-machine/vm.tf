@@ -11,11 +11,11 @@ resource "azurerm_linux_virtual_machine" "vm" {
   ]
 
   admin_ssh_key {
-  username   = var.admin_username
-  public_key = local.effective_public_key
-}
+    username   = var.admin_username
+    public_key = local.effective_public_key
+  }
 
-disable_password_authentication = true
+  disable_password_authentication = true
 
   os_disk {
     caching              = "ReadWrite"
