@@ -3,7 +3,7 @@ resource "azurerm_public_ip" "public_ip" {
   for_each            = var.vm_names
   name                = "${var.prefix}-pip-${each.key}"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = data.data.azurerm_resource_group.rg.name
   allocation_method   = "Static"
   sku                 = "Standard"
 }
@@ -11,8 +11,8 @@ resource "azurerm_public_ip" "public_ip" {
 # Network Security Group allowing SSH
 resource "azurerm_network_security_group" "nsg" {
   name                = "${var.prefix}-nsg"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.data.azurerm_resource_group.rg.location
+  resource_group_name = data.data.azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-SSH"
