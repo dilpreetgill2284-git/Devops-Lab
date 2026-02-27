@@ -25,6 +25,7 @@ resource "azurerm_public_ip" "public_ip" {
 }
 
 resource "azurerm_network_interface" "nic" {
+  depends_on          = [azurerm_public_ip.public_ip]
   for_each            = var.vm_names
   name                = "${var.prefix}-nic-${each.key}"
   location            = data.azurerm_resource_group.rg.location
@@ -32,7 +33,6 @@ resource "azurerm_network_interface" "nic" {
   tags                = var.tags
 
   # Ensure NICs wait for the PIP set (even though only one PIP exists)
-  depends_on = [azurerm_public_ip.public_ip]
 
   ip_configuration {
     name                          = "ipconfig1"
