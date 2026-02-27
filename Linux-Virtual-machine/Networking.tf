@@ -16,8 +16,9 @@ resource "azurerm_subnet" "subnet" {
 
 # Network Interface
 resource "azurerm_network_interface" "nic" {
-  depends_on = [ azurerm_public_ip.public_ip, time_sleep.after_public_ip ]
-  depends_on          = [azurerm_public_ip.public_ip]
+  depends_on = [time_sleep.after_pip]
+
+
   for_each            = var.vm_names
   name                = "${var.prefix}-nic-${each.key}"
   location            = data.azurerm_resource_group.rg.location
