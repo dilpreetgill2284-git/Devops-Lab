@@ -1,7 +1,7 @@
 resource "azurerm_linux_virtual_machine" "vm" {
   for_each            = var.vm_names
   name                = "${var.prefix}-${each.key}"
-  resource_group_name = data.data.azurerm_resource_group.rg.name
+  resource_group_name = data.azurerm_resource_group.rg.name
   location            = var.location
   size                = var.vm_size
   admin_username      = var.admin_username
