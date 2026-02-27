@@ -2,15 +2,15 @@ name: Terraform Deploy to Azure
 
 on:
   push:
-    branches: [ main ]  # runs when you push/merge to main
-  workflow_dispatch:     # optional: lets you run it manually from Actions
+    branches: [ main ]           # runs when you push/merge to main
+  workflow_dispatch:              # allows manual 'Run workflow' from Actions tab
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      id-token: write        # required for OIDC with azure/login
+      id-token: write            # required for OIDC with azure/login
       contents: read
 
     # Run all shell steps inside your Terraform folder
@@ -22,12 +22,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Optional: quick check that your Variables are present (prints only lengths)
+      - name: Debug IDs presence
+        run: |
+          echo "CLIENT_ID len=$(echo -n '${{ vars.AZURE_CLIENT_ID }}' | wc -c)"
+          echo "TENANT_ID len=$(echo -n '${{ vars.AZURE_TENANT_ID }}' | wc -c)"
+          echo "SUBSCRIPTION_ID len=$(echo -n '${{ vars.AZURE_SUBSCRIPTION_ID }}' | wc -c)"
+
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -40,7 +47,7 @@ jobs:
       - name: Terraform Validate
         run: terraform validate -no-color
 
-      # Keep plan as a single line to avoid YAML formatting issues
+      # Keep as a single line to avoid YAML formatting mistakes
       - name: Terraform Plan
         run: terraform plan -out=tfplan -input=false -var "location=australiaeast" -var "resource_group_name=rg-devops-lab" -var "vnet_name=vnet-devops-lab" -var "vnet_cidr=10.10.0.0/16" -var "subnet_name=snet-devops-lab" -var "subnet_cidr=10.10.1.0/24" -var "vm_name=vm-devops-01" -var "vm_size=Standard_B2s" -var "admin_username=azureuser"
 
