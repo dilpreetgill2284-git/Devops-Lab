@@ -65,3 +65,23 @@ variable "tags" {
     owner       = "devops-lab"
   }
 }
+
+# --- Ensure required variables exist ---
+
+variable "vm_name" {
+  type        = string
+  description = "Base VM name (used in resource names)."
+  default     = "vm-devops-01"
+}
+
+variable "vnet_name" {
+  type        = string
+  description = "Virtual network name."
+  default     = "vnet-devops-lab"
+}
+
+variable "vnet_cidr" {
+  type        = string
+  description = "VNet CIDR (single block)."
+  default     = "10.10.0.0/16"
+}
