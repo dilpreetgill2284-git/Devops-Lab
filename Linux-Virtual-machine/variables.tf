@@ -49,12 +49,9 @@ variable "admin_username" {
   default     = "azureuser"
 }
 
-/* Remove the hard requirement for ssh_public_key:
-   - Either don't declare it at all, OR declare with empty default.
-*/
+# Optional: if empty, ssh.tf will generate a key pair and use its public key
 variable "ssh_public_key" {
   type        = string
-  description = "Optional public key string; if empty, Terraform will generate one"
+  description = "Optional OpenSSH public key string"
   default     = ""
 }
-``
