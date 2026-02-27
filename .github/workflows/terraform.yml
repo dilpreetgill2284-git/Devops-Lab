@@ -1,1 +1,41 @@
+name: Terraform Deploy to Azure
 
+on:
+  push:
+    branches: [ main ]  # you confirmed main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: Linux-Virtual-machine
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+        working-directory: Linux-Virtual-machine
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+        working-directory: Linux-Virtual-machine
