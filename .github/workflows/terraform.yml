@@ -13,7 +13,6 @@ jobs:
       id-token: write
       contents: read
 
-    # All steps run inside your TF folder
     defaults:
       run:
         working-directory: Linux-Virtual-machine
@@ -22,13 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug workspace
-        run: |
-          echo "GITHUB_WORKSPACE=$(pwd)"
-          ls -la
-          echo "----"
-          ls -la Linux-Virtual-machine || true
-
+      # Using repo-level Variables as you chose (Option B)
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
@@ -48,17 +41,18 @@ jobs:
         run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan -input=false \
-          -var "location=australiaeast" \
-          -var "resource_group_name=rg-devops-lab" \
-          -var "vnet_name=vnet-devops-lab" \
-          -var "vnet_cidr=10.10.0.0/16" \
-          -var "subnet_name=snet-devops-lab" \
-          -var "subnet_cidr=10.10.1.0/24" \
-          -var "vm_name=vm-devops-01" \
-          -var "vm_size=Standard_D2s_v3" \
-          -var "admin_username=azureuser" \
-          -var "prefix=dil-${{ github.run_number }}"
+        run: |
+          terraform plan -out=tfplan -input=false \
+            -var "location=australiaeast" \
+            -var "resource_group_name=rg-devops-lab" \
+            -var "vnet_name=vnet-devops-lab" \
+            -var "vnet_cidr=10.10.0.0/16" \
+            -var "subnet_name=snet-devops-lab" \
+            -var "subnet_cidr=10.10.1.0/24" \
+            -var "vm_name=vm-devops-01" \
+            -var "vm_size=Standard_D2s_v3" \
+            -var "admin_username=azureuser" \
+            -var "prefix=dil-${{ github.run_number }}"
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false tfplan
