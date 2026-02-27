@@ -1,0 +1,30 @@
+# Virtual Network
+resource "azurerm_virtual_network" "vnet" {
+  name                = "${var.prefix}-network"
+  address_space       = var.vnet_address_space
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Subnet
+resource "azurerm_subnet" "subnet" {
+  name                 = var.subnet_name
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = var.subnet_prefixes
+}
+
+# Network Interface
+resource "azurerm_network_interface" "nic" {
+  for_each            = var.vm_names
+  name                = "${var.prefix}-nic-${each.key}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = var.nic_ipconfig_name
+    subnet_id                     = azurerm_subnet.subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.public_ip[each.key].id
+  }
+}
