@@ -55,3 +55,10 @@ variable "ssh_public_key" {
   description = "Optional OpenSSH public key string"
   default     = ""
 }
+
+variable "prefix" {
+  type        = string
+  description = "Name prefix used for resource names (VM/NIC/NSG/PIP/etc.)"
+  default     = "devops-lab"
+}
+
