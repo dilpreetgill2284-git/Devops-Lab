@@ -1,59 +1,60 @@
 variable "location" {
   type        = string
-  description = "Azure region where resources will be created"
-  default     = "Australia East"
+  description = "Azure region"
+  default     = "australiaeast"
 }
 
-variable "prefix" {
+variable "resource_group_name" {
   type        = string
-  description = "Short prefix for naming Azure resources"
-  default     = "dil"
+  description = "Resource group name"
 }
 
-variable "ssh_public_key" {
-  description = "OpenSSH-formatted public key text (the .pub line)"
+variable "vnet_name" {
   type        = string
+  description = "VNet name"
 }
 
-variable "vnet_address_space" {
-  type        = list(string)
-  description = "Address space for the VNet"
-  default     = ["10.0.0.0/16"]
-}
-
-variable "subnet_prefixes" {
-  type        = list(string)
-  description = "Address prefixes for the subnet"
-  default     = ["10.0.2.0/24"]
-}
-
-variable "vm_size" {
+variable "vnet_cidr" {
   type        = string
-  description = "Cheapest option availbe for labs is Standard_B2als_v2"
-  default     = "Standard_B2als_v2"
-}
-
-variable "admin_username" {
-  type        = string
-  description = "Admin username for the Linux VM"
-  default     = "adminuser"
+  description = "VNet CIDR"
+  default     = "10.10.0.0/16"
 }
 
 variable "subnet_name" {
   type        = string
-  description = "Name for the subnet resource in the VNet"
-  default     = "vm-subnet"
+  description = "Subnet name"
 }
 
-variable "nic_ipconfig_name" {
+variable "subnet_cidr" {
   type        = string
-  description = "Name for the NIC's IP configuration block"
-  default     = "nic-ipconfig"
+  description = "Subnet CIDR"
+  default     = "10.10.1.0/24"
 }
 
-
-variable "vm_names" {
-  type    = set(string)
-  default = ["vm01", "vm02"]
+variable "vm_name" {
+  type        = string
+  description = "Base VM name"
+  default     = "vm-devops-01"
 }
 
+variable "vm_size" {
+  type        = string
+  description = "VM size"
+  default     = "Standard_B2s"
+}
+
+variable "admin_username" {
+  type        = string
+  description = "Admin username"
+  default     = "azureuser"
+}
+
+/* Remove the hard requirement for ssh_public_key:
+   - Either don't declare it at all, OR declare with empty default.
+*/
+variable "ssh_public_key" {
+  type        = string
+  description = "Optional public key string; if empty, Terraform will generate one"
+  default     = ""
+}
+``
