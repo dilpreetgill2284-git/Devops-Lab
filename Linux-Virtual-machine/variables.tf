@@ -11,7 +11,7 @@ variable "resource_group_name" {
 
 variable "prefix" {
   type        = string
-  description = "Prefix for naming. Workflow passes a dynamic value (e.g., dil-${github.run_number})."
+  description = "Prefix for resource names (set by CI)"
   default     = "devops-lab"
 }
 

@@ -32,7 +32,7 @@ resource "azurerm_network_interface" "nic" {
   tags                = var.tags
 
   # Ensure NICs wait for the PIP set (even though only one PIP exists)
-  depends_on = [ azurerm_public_ip.public_ip ]
+  depends_on = [azurerm_public_ip.public_ip]
 
   ip_configuration {
     name                          = "ipconfig1"
@@ -40,8 +40,6 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation = "Dynamic"
 
     # Attach PIP only if one exists for this VM (vm-devops-01). Others get null.
-    public_ip_address_id = contains(keys(azurerm_public_ip.public_ip), each.key)
-      ? azurerm_public_ip.public_ip[each.key].id
-      : null
+    public_ip_address_id = contains(keys(azurerm_public_ip.public_ip), each.key) ? azurerm_public_ip.public_ip[each.key].id : null
   }
 }
