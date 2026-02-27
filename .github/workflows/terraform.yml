@@ -2,26 +2,31 @@ name: Terraform Deploy to Azure
 
 on:
   push:
-    branches: [ main ]  # you confirmed main
-
-permissions:
-  id-token: write
-  contents: read
+    branches: [ main ]  # runs when you push/merge to main
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      id-token: write        # required for OIDC with azure/login
+      contents: read
+
+    # Run every shell step inside your Terraform folder
+    defaults:
+      run:
+        working-directory: Linux-Virtual-machine
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Azure Login using OIDC
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -29,13 +34,22 @@ jobs:
           terraform_version: 1.7.5
 
       - name: Terraform Init
-        run: terraform init
-        working-directory: Linux-Virtual-machine
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
 
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-        working-directory: Linux-Virtual-machine
+        run: terraform plan -out=tfplan -input=false \
+             -var "location=australiaeast" \
+             -var "resource_group_name=rg-devops-lab" \
+             -var "vnet_name=vnet-devops-lab" \
+             -var "vnet_cidr=10.10.0.0/16" \
+             -var "subnet_name=snet-devops-lab" \
+             -var "subnet_cidr=10.10.1.0/24" \
+             -var "vm_name=vm-devops-01" \
+             -var "vm_size=Standard_B2s" \
+             -var "admin_username=azureuser"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: Linux-Virtual-machine
+        run: terraform apply -auto-approve -input=false tfplan
