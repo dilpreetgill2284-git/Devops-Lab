@@ -1,4 +1,4 @@
-name: Terraform CI for Linux-Virtual-machine
+name: Terraform CI for Linux-Virtual-machine (Plan + Manual Apply/Destroy)
 
 on:
   push:
@@ -10,6 +10,16 @@ on:
     paths:
       - 'Linux-Virtual-machine/**'
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose what to run'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
 
 permissions:
   contents: read
@@ -18,7 +28,7 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    # All shell steps run inside your project folder
+    # Run all commands from inside your project folder
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine
@@ -26,10 +36,10 @@ jobs:
     # CI env + SSH path override + Azure auth for provider
     env:
       TF_IN_AUTOMATION: "true"
-      # Override Windows path with a Linux path in the runner (relative to working-directory):
+      # Fallback path the runner creates for your public key
       TF_VAR_ssh_public_key_path: "./.ssh/azure_vm_rsa.pub"
 
-      # azurerm provider authentication with your Service Principal
+      # azurerm provider auth (your Service Principal)
       ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
       ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -44,7 +54,7 @@ jobs:
         with:
           terraform_version: 1.7.5
 
-      # Create the PUBLIC key file the Terraform file() will read
+      # Create the PUBLIC key file the Terraform file() fallback reads
       - name: Prepare SSH public key file
         run: |
           mkdir -p .ssh
@@ -53,7 +63,7 @@ jobs:
         env:
           SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
 
-      # CI checks
+      # ---------- CI: Always run fmt/init/validate ----------
       - name: Terraform Fmt (auto-fix)
         run: terraform fmt -recursive .
 
@@ -63,10 +73,19 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      # ---------- Mode selection ----------
+      # PLAN (default or when action == 'plan')
       - name: Terraform Plan
-        run: terraform plan -input=false -lock=false
+        if: ${{ inputs.action == 'plan' || github.event_name != 'workflow_dispatch' }}
+        run: terraform plan -input=false -lock=false -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
 
-      # ---- Manual Apply (optional) via "Run workflow" button ----
+      # APPLY (manual only)
       - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch'
-        run: terraform apply -auto-approve
+        if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
+        run: terraform apply -auto-approve -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
+
+      # DESTROY (manual only)
+      - name: Terraform Destroy
+        if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
+        run: terraform destroy -auto-approve -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
+``
