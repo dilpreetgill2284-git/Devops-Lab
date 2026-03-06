@@ -50,7 +50,7 @@ jobs:
 
       # 4) Hygiene: check if your .tf files are formatted
       - name: Terraform Fmt (check only)
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check
 
       # 5) Init WITHOUT backend for CI "plan-only" (no remote state needed yet)
       - name: Terraform Init (no backend for plan)
