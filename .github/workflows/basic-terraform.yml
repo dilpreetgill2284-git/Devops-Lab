@@ -1,1 +1,83 @@
+name: Terraform CI for Linux-Virtual-machine (Plan + Manual Apply)
 
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Linux-Virtual-machine/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Linux-Virtual-machine/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    # Run all shell steps from the project folder
+    defaults:
+      run:
+        working-directory: ./Linux-Virtual-machine
+
+    # CI env + fix for ssh key path on Linux runner
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_ssh_public_key_path: "${{ github.workspace }}/Linux-Virtual-machine/.ssh/azure_vm_rsa.pub"
+
+    steps:
+      # 1) Get your repo files onto the runner
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) Install Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      # 3) Create the .ssh folder and write your PUBLIC key from repo secret
+      - name: Prepare SSH public key file
+        run: |
+          mkdir -p .ssh
+          echo "${SSH_PUBLIC_KEY}" > .ssh/azure_vm_rsa.pub
+          chmod 600 .ssh/azure_vm_rsa.pub
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      # 4) CI checks (no Azure auth needed)
+      - name: Terraform Fmt (check only)
+        run: terraform fmt -check -recursive .
+
+      - name: Terraform Init (no backend for plan-only CI)
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan (offline)
+        run: terraform plan -input=false -lock=false -refresh=false
+
+      # ---------- Manual deploy (CD) ----------
+      # Run via the "Run workflow" button only.
+      # Uses your Service Principal env vars (no OIDC needed).
+      - name: Terraform Init (for apply)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: terraform init
+
+      - name: Terraform Apply (manual trigger only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+        run: terraform apply -auto-approve
