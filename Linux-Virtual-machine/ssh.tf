@@ -1,13 +1,8 @@
-resource "tls_private_key" "vm_ssh" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
 
-locals {
-  effective_public_key = var.ssh_public_key != "" ? var.ssh_public_key : tls_private_key.vm_ssh.public_key_openssh
-}
+# We do not generate keys in Terraform. 
+# CI creates the public key file and we read it from var.ssh_public_key_path.
 
 output "ssh_public_key_effective" {
-  value       = local.effective_public_key
-  description = "Public key used for the VMs"
+  value       = file(var.ssh_public_key_path)
+  description = "Public key used for the VMs (read from the path provided)"
 }
