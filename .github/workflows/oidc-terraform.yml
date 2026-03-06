@@ -15,21 +15,28 @@ on:
         options: [ plan, apply, destroy ]
 
 permissions:
-  id-token: write     # REQUIRED FOR OIDC
+  id-token: write
   contents: read
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine
+
+    # 👇 Important: Tell azurerm to use OIDC (no client secret)
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 👇 Must come BEFORE terraform init
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
