@@ -1,1 +1,89 @@
+name: Terraform CI (Plan + Manual Apply)
 
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  # Allows you to click "Run workflow" for a manual run (used for Apply step)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: none
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    # ---- Environment variables for the whole job ----
+    env:
+      TF_IN_AUTOMATION: "true"
+      # Override your Windows path from variables.tf with a Linux path on the runner
+      TF_VAR_ssh_public_key_path: "${{ github.workspace }}/.ssh/azure_vm_rsa.pub"
+
+      # Optional: if you plan to add SP auth later for Apply (no OIDC)
+      # ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      # ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      # ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+
+    steps:
+      # 1) Pull your repo code onto the GitHub runner
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) Install Terraform on the runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      # 3) Create the .ssh folder and write your PUBLIC key from the GitHub Secret
+      - name: Prepare SSH public key file
+        run: |
+          mkdir -p .ssh
+          echo "${SSH_PUBLIC_KEY}" > .ssh/azure_vm_rsa.pub
+          chmod 600 .ssh/azure_vm_rsa.pub
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      # 4) Hygiene: check if your .tf files are formatted
+      - name: Terraform Fmt (check only)
+        run: terraform fmt -check -recursive
+
+      # 5) Init WITHOUT backend for CI "plan-only" (no remote state needed yet)
+      - name: Terraform Init (no backend for plan)
+        run: terraform init -backend=false
+
+      # 6) Validate Terraform syntax/config locally
+      - name: Terraform Validate
+        run: terraform validate
+
+      # 7) Plan WITHOUT refreshing remote state (keeps plan offline for now)
+      - name: Terraform Plan (no refresh)
+        run: terraform plan -input=false -lock=false -refresh=false
+
+      # -------------------- APPLY SECTION (manual) --------------------
+      # When you’re ready to actually deploy, run this workflow manually (workflow_dispatch)
+      # and this step will execute. You NEED Azure credentials (non-OIDC) to apply.
+      # Provide a Service Principal secret in repo secrets as AZURE_CLIENT_SECRET
+      # and uncomment ARM_* env in job env: above. Then un-comment this step.
+
+      # - name: Terraform Init (normal, with default local backend)
+      #   if: github.event_name == 'workflow_dispatch'
+      #   run: terraform init
+
+      # - name: Azure CLI login (Service Principal - no OIDC)
+      #   if: github.event_name == 'workflow_dispatch'
+      #   run: |
+      #     echo "Logging into Azure using Service Principal..."
+      #     az login --service-principal \
+      #       --username "${ARM_CLIENT_ID}" \
+      #       --password "${ARM_CLIENT_SECRET}" \
+      #       --tenant   "${ARM_TENANT_ID}"
+      #     az account set --subscription "${ARM_SUBSCRIPTION_ID}"
+
+      # - name: Terraform Apply (manual trigger only)
+      #   if: github.event_name == 'workflow_dispatch'
+      #   run: terraform apply -auto-approve
