@@ -5,10 +5,6 @@ on:
     branches: [ main ]
     paths:
       - 'Linux-Virtual-machine/**'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'Linux-Virtual-machine/**'
   workflow_dispatch:
     inputs:
       action:
@@ -19,6 +15,7 @@ on:
         options: [ plan, apply, destroy ]
 
 permissions:
+  id-token: write     # REQUIRED FOR OIDC
   contents: read
 
 jobs:
@@ -29,21 +26,16 @@ jobs:
       run:
         working-directory: ./Linux-Virtual-machine
 
-    env:
-      TF_IN_AUTOMATION: "true"
-
-      # Azure auth (Service Principal)
-      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
-      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
-
-      # vm.tf fallback path
-      TF_VAR_ssh_public_key_path: "./.ssh/azure_vm_rsa.pub"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -61,32 +53,28 @@ jobs:
       - name: Terraform Fmt (auto-fix)
         run: terraform fmt -recursive .
 
-      # Backend + provider init (uses backend.tf from the project)
       - name: Terraform Init (remote backend)
         run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
 
-      # -------- PLAN (default on push/PR or manual action=plan) --------
       - name: Terraform Plan
         if: ${{ inputs.action == 'plan' || github.event_name != 'workflow_dispatch' }}
         run: terraform plan -out=tfplan.plan
 
-      # -------- APPLY (manual only, no -auto-approve by using plan file) --------
-      - name: Terraform Plan for Apply (manual only)
+      - name: Terraform Plan for Apply
         if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
         run: terraform plan -out=tfplan.apply
 
-      - name: Terraform Apply (manual only, no auto-approve, applies saved plan)
+      - name: Terraform Apply
         if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
         run: terraform apply tfplan.apply
 
-      # -------- DESTROY (manual only, no -auto-approve by using plan file) --------
-      - name: Terraform Plan for Destroy (manual only)
+      - name: Terraform Plan for Destroy
         if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
         run: terraform plan -destroy -out=tfplan.destroy
 
-      - name: Terraform Destroy (manual only, applies saved destroy plan)
+      - name: Terraform Destroy
         if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
         run: terraform apply tfplan.destroy
