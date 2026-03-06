@@ -16,10 +16,7 @@ on:
         required: true
         default: 'plan'
         type: choice
-        options:
-          - plan
-          - apply
-          - destroy
+        options: [ plan, apply, destroy ]
 
 permissions:
   contents: read
@@ -28,22 +25,21 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    # Run all commands from inside your project folder
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine
 
-    # CI env + SSH path override + Azure auth for provider
     env:
       TF_IN_AUTOMATION: "true"
-      # Fallback path the runner creates for your public key
-      TF_VAR_ssh_public_key_path: "./.ssh/azure_vm_rsa.pub"
 
-      # azurerm provider auth (your Service Principal)
+      # Azure auth (Service Principal)
       ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
       ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      # vm.tf fallback path
+      TF_VAR_ssh_public_key_path: "./.ssh/azure_vm_rsa.pub"
 
     steps:
       - name: Checkout
@@ -54,7 +50,6 @@ jobs:
         with:
           terraform_version: 1.7.5
 
-      # Create the PUBLIC key file the Terraform file() fallback reads
       - name: Prepare SSH public key file
         run: |
           mkdir -p .ssh
@@ -63,28 +58,35 @@ jobs:
         env:
           SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
 
-      # ---------- CI: Always run fmt/init/validate ----------
       - name: Terraform Fmt (auto-fix)
         run: terraform fmt -recursive .
 
-      - name: Terraform Init
+      # Backend + provider init (uses backend.tf from the project)
+      - name: Terraform Init (remote backend)
         run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
 
-      # ---------- Mode selection ----------
-      # PLAN (default or when action == 'plan')
+      # -------- PLAN (default on push/PR or manual action=plan) --------
       - name: Terraform Plan
         if: ${{ inputs.action == 'plan' || github.event_name != 'workflow_dispatch' }}
-        run: terraform plan -input=false -lock=false -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
+        run: terraform plan -out=tfplan.plan
 
-      # APPLY (manual only)
-      - name: Terraform Apply
+      # -------- APPLY (manual only, no -auto-approve by using plan file) --------
+      - name: Terraform Plan for Apply (manual only)
         if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
-        run: terraform apply -auto-approve -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
+        run: terraform plan -out=tfplan.apply
 
-      # DESTROY (manual only)
-      - name: Terraform Destroy
+      - name: Terraform Apply (manual only, no auto-approve, applies saved plan)
+        if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
+        run: terraform apply tfplan.apply
+
+      # -------- DESTROY (manual only, no -auto-approve by using plan file) --------
+      - name: Terraform Plan for Destroy (manual only)
         if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
-        run: terraform destroy -auto-approve -var="ssh_public_key_path=./.ssh/azure_vm_rsa.pub"
+        run: terraform plan -destroy -out=tfplan.destroy
+
+      - name: Terraform Destroy (manual only, applies saved destroy plan)
+        if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
+        run: terraform apply tfplan.destroy
