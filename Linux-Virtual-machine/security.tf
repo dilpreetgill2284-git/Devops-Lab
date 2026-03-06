@@ -1,8 +1,18 @@
+# Public IP for the VM
+resource "azurerm_public_ip" "public_ip" {
+  for_each            = var.vm_names
+  name                = "${var.prefix}-pip-${each.key}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+# Network Security Group allowing SSH
 resource "azurerm_network_security_group" "nsg" {
   name                = "${var.prefix}-nsg"
-  location            = data.azurerm_resource_group.rg.location
-  resource_group_name = data.azurerm_resource_group.rg.name
-  tags                = var.tags
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "Allow-SSH"
@@ -17,7 +27,9 @@ resource "azurerm_network_security_group" "nsg" {
   }
 }
 
-resource "azurerm_subnet_network_security_group_association" "snet_nsg" {
-  subnet_id                 = azurerm_subnet.subnet.id
+# Associate NSG with NIC
+resource "azurerm_network_interface_security_group_association" "nic_nsg" {
+  for_each                  = var.vm_names
+  network_interface_id      = azurerm_network_interface.nic[each.key].id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
