@@ -1,87 +1,59 @@
-variable "location" { # kept for compatibility; we always use the RG's location in resources
+variable "location" {
   type        = string
-  description = "Azure region (RG location is authoritative)."
-  default     = "australiaeast"
-}
-
-variable "resource_group_name" {
-  type        = string
-  description = "Existing Resource Group name."
+  description = "Azure region where resources will be created"
+  default     = "Australia East"
 }
 
 variable "prefix" {
   type        = string
-  description = "Prefix for resource names (set by CI)"
-  default     = "devops-lab"
+  description = "Short prefix for naming Azure resources"
+  default     = "dil"
+}
+
+variable "ssh_public_key_path" {
+  type        = string
+  description = "Full path to your SSH public key (.pub). Must include the filename."
+  default     = "C:/Terraform/LinuxVMHomework/Keys/azure_vm_rsa.pub"
 }
 
 variable "vnet_address_space" {
   type        = list(string)
-  description = "Address space for the VNet."
-  default     = ["10.10.0.0/16"]
+  description = "Address space for the VNet"
+  default     = ["10.0.0.0/16"]
 }
 
-variable "subnet_name" {
-  type        = string
-  description = "Subnet name."
-  default     = "snet-devops-lab"
-}
-
-variable "subnet_cidr" {
-  type        = string
-  description = "Subnet CIDR."
-  default     = "10.10.1.0/24"
-}
-
-variable "vm_names" {
-  type        = set(string)
-  description = "Set of VM names for for_each."
-  default     = ["vm-devops-01", "vm-devops-02"]
+variable "subnet_prefixes" {
+  type        = list(string)
+  description = "Address prefixes for the subnet"
+  default     = ["10.0.2.0/24"]
 }
 
 variable "vm_size" {
   type        = string
-  description = "VM size."
-  default     = "Standard_D2s_v3"
+  description = "Cheapest option availbe for labs is Standard_B2als_v2"
+  default     = "Standard_B2als_v2"
 }
 
 variable "admin_username" {
   type        = string
-  description = "SSH admin username."
-  default     = "azureuser"
+  description = "Admin username for the Linux VM"
+  default     = "adminuser"
 }
 
-variable "ssh_public_key" {
+variable "subnet_name" {
   type        = string
-  description = "Optional OpenSSH public key string. If empty, keypair is generated."
-  default     = ""
+  description = "Name for the subnet resource in the VNet"
+  default     = "vm-subnet"
 }
 
-variable "tags" {
-  type        = map(string)
-  description = "Common resource tags."
-  default = {
-    environment = "dev"
-    owner       = "devops-lab"
-  }
-}
-
-# --- Ensure required variables exist ---
-
-variable "vm_name" {
+variable "nic_ipconfig_name" {
   type        = string
-  description = "Base VM name (used in resource names)."
-  default     = "vm-devops-01"
+  description = "Name for the NIC's IP configuration block"
+  default     = "nic-ipconfig"
 }
 
-variable "vnet_name" {
-  type        = string
-  description = "Virtual network name."
-  default     = "vnet-devops-lab"
-}
 
-variable "vnet_cidr" {
-  type        = string
-  description = "VNet CIDR (single block)."
-  default     = "10.10.0.0/16"
+variable "vm_names" {
+  type    = set(string)
+  default = ["vm01", "vm02"]
 }
