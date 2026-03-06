@@ -12,7 +12,8 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   admin_ssh_key {
     username   = var.admin_username
-public_key = try(file(var.ssh_public_key_path), file("./.ssh/azure_vm_rsa.pub"))  }
+public_key = try(file(var.ssh_public_key_path), file("./.ssh/azure_vm_rsa.pub"))  
+}
 
   os_disk {
     caching              = "ReadWrite"
