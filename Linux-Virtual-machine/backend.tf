@@ -6,7 +6,3 @@ terraform {
     key                  = "linuxvm/terraform.tfstate"  # The blob name for tfstate (Terraform will create this)
   }
 }
-
-provider "azurerm" {
-  features {}
-}
