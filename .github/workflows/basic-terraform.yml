@@ -1,0 +1,32 @@
+name: Terraform Plan (Basic)
+
+on:
+  pull_request:
+    paths:
+      - 'Linux-Virtual-machine/**'
+  workflow_dispatch: {}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Linux-Virtual-machine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt
+        run: terraform fmt -check
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan (no Azure auth)
+        run: terraform plan -input=false -no-color
