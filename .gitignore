@@ -22,3 +22,10 @@ override.tf.json
 # Keep lock file
 !.terraform.lock.hcl
 " > .gitignore
+# Terraform state
+*.tfstate
+*.tfstate.backup
+.terraform/
+crash.log
+override.tf
+*.tfvars
