@@ -1,6 +1,6 @@
 resource "helm_release" "arc" {
   name       = "actions-runner-controller"
-  namespace  = "kubernetes-runner"
+  namespace  = kubernetes_namespace.arc.metadata[0].name
 
   repository = "https://actions-runner-controller.github.io/actions-runner-controller"
   chart      = "actions-runner-controller"
@@ -15,6 +15,8 @@ resource "helm_release" "arc" {
     name  = "authSecret.create"
     value = "false"
   }
+
+  depends_on = [kubernetes_namespace.arc]
 
   # If ARC needs cert-manager webhooks to be enabled, they already are,
   # because we installed cert-manager above.
