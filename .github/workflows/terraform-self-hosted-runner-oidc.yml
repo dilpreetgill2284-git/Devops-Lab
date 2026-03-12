@@ -1,4 +1,4 @@
-name: Terraform CI for Linux-Virtual-machine (Plan + Manual Apply/Destroy)
+name: Terraform-self-hosted-runner-oidc.yml
 
 on:
   push:
