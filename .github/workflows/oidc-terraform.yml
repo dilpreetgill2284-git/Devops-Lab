@@ -43,8 +43,8 @@ jobs:
       - name: Install git and tar in the job container
         working-directory: /      # ← the one-line fix
         run: |
-          apt-get update
-          apt-get install -y git tar
+          tdnf makecache -q || true
+          tdnf install -y git tar
 
       - name: Checkout
         uses: actions/checkout@v4
