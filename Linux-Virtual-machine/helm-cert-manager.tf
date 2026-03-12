@@ -6,13 +6,11 @@ resource "helm_release" "cert_manager" {
   chart      = "cert-manager"
   version    = "v1.14.4"       # pin for stability
 
-  create_namespace = true
-
-  # Equivalent to: --set installCRDs=true
+  # Equivalent to: --set installCRDs=true - Install CRDs needed by cert-manager
   set {
     name  = "installCRDs"
     value = "true"
   }
 
-  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
+  depends_on = [kubernetes_namespace.cert_manager]
 }
