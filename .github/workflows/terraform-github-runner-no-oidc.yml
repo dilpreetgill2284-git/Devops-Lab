@@ -1,0 +1,72 @@
+name: Terraform CI for Linux-Virtual-machine
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Linux-Virtual-machine/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Linux-Virtual-machine/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    # All shell steps run inside your project folder
+    defaults:
+      run:
+        working-directory: ./Linux-Virtual-machine
+
+    # CI env + SSH path override + Azure auth for provider
+    env:
+      TF_IN_AUTOMATION: "true"
+      # Override Windows path with a Linux path in the runner (relative to working-directory):
+      TF_VAR_ssh_public_key_path: "./.ssh/azure_vm_rsa.pub"
+
+      # azurerm provider authentication with your Service Principal
+      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      # Create the PUBLIC key file the Terraform file() will read
+      - name: Prepare SSH public key file
+        run: |
+          mkdir -p .ssh
+          echo "${SSH_PUBLIC_KEY}" > .ssh/azure_vm_rsa.pub
+          chmod 600 .ssh/azure_vm_rsa.pub
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      # CI checks
+      - name: Terraform Fmt (auto-fix)
+        run: terraform fmt -recursive .
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -lock=false
+
+      # ---- Manual Apply (optional) via "Run workflow" button ----
+      - name: Terraform Apply
+        if: github.event_name == 'workflow_dispatch'
+        run: terraform apply -auto-approve
