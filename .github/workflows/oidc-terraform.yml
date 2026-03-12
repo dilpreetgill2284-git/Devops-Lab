@@ -21,16 +21,17 @@ permissions:
 jobs:
   terraform:
     runs-on: [self-hosted, linux, minikube]
-    
- # ✅ Run steps inside an Azure CLI container so `az` is available
-    container:
-      image: mcr.microsoft.com/azure-cli:latest
 
+    # Run steps inside an Azure CLI container so `az` is available
+    container:
+      image: mcr.microsoft.com/azure-cli:2.63.0   # or 'latest'
+
+    # Keep your default working dir for Terraform steps
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine
 
-    # 👇 Important: Tell azurerm to use OIDC (no client secret)
+    # OIDC env for azurerm
     env:
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
@@ -38,9 +39,9 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
-    # 👇 Install tools that the azure-cli image doesn't include by default
+      # ✅ Run from '/' because repo folder doesn't exist yet (checkout hasn't run)
       - name: Install git and tar in the job container
-      working-directory: /          # ✅ added: run from a real folder before checkout
+        working-directory: /      # ← the one-line fix
         run: |
           apt-get update
           apt-get install -y git tar
@@ -48,7 +49,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 👇 Must come BEFORE terraform init
+      - name: Sanity check Azure CLI
+        run: az version
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
