@@ -38,6 +38,13 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
+    
+# 👇 Install tools that the azure-cli image doesn't include by default
+      - name: Install git and tar in the job container
+        run: |
+          apt-get update
+          apt-get install -y git tar
+
       - name: Checkout
         uses: actions/checkout@v4
 
