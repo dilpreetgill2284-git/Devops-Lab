@@ -53,7 +53,7 @@ jobs:
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
           apt-get install -y nodejs
           node --version
-          npm --versio
+          npm --version
 
       - name: Checkout
         uses: actions/checkout@v4
