@@ -1,6 +1,6 @@
 resource "helm_release" "cert_manager" {
   name       = "cert-manager"
-  namespace  = "cert-manager"
+  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
 
   repository = "https://charts.jetstack.io"
   chart      = "cert-manager"
@@ -13,4 +13,6 @@ resource "helm_release" "cert_manager" {
     name  = "installCRDs"
     value = "true"
   }
+
+  namespace  = kubernetes_namespace.cert_manager.metadata[0].name
 }
