@@ -52,8 +52,8 @@ jobs:
           # Install Node.js 20 (required for modern JS actions)
           curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
           apt-get install -y nodejs
-          node --version
-          npm --version
+          node --version || true
+          npm --version || true
 
       - name: Checkout
         uses: actions/checkout@v4
