@@ -1,4 +1,4 @@
-name: Terraform using a self-hosted GitHub Actions runner on Kubernetes
+name: 03-terraform-self-hosted-kubernetes.yml
 
 on:
   push:
