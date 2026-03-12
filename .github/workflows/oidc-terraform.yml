@@ -24,7 +24,7 @@ jobs:
     
  # ✅ Run steps inside an Azure CLI container so `az` is available
     container:
-      image: mcr.microsoft.com/azure-cli:2
+      image: mcr.microsoft.com/azure-cli:latest
 
     defaults:
       run:
