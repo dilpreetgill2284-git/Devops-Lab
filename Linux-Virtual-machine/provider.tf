@@ -8,18 +8,23 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.13"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.27"
+    }
   }
 }
 
-# Azure provider (unchanged)
 provider "azurerm" {
   features {}
 }
 
-# Helm provider → tells Terraform how to talk to your Minikube cluster
+provider "kubernetes" {
+  config_path = "~/.kube/config"
+}
+
 provider "helm" {
   kubernetes {
-    # Use the same kubeconfig kubectl uses. Adjust path if needed.
     config_path = "~/.kube/config"
   }
 }
