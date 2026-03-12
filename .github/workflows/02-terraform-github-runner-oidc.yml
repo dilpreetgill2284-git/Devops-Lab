@@ -1,4 +1,4 @@
-name: Terraform using GitHub-hosted runner with OIDC authentication
+name: 02-terraform-github-runner-oidc.yml
 
 on:
   push:
