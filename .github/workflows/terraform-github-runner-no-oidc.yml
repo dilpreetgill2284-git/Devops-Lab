@@ -1,4 +1,4 @@
-name: Terraform CI for Linux-Virtual-machine
+name: Terraform-github-runner-no-oidc.yml
 
 on:
   push:
