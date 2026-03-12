@@ -1,4 +1,4 @@
-name: Terraform-self-hosted-runner-oidc.yml
+name: Terraform using a self-hosted GitHub Actions runner on Kubernetes
 
 on:
   push:
