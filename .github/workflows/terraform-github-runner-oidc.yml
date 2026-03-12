@@ -1,0 +1,87 @@
+name: Terraform-github-runner-oidc.yml (Plan + Manual Apply/Destroy)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Linux-Virtual-machine/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose what to run'
+        required: true
+        default: 'plan'
+        type: choice
+        options: [ plan, apply, destroy ]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./Linux-Virtual-machine
+
+    # 👇 Important: Tell azurerm to use OIDC (no client secret)
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 👇 Must come BEFORE terraform init
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Prepare SSH public key file
+        run: |
+          mkdir -p .ssh
+          echo "${SSH_PUBLIC_KEY}" > .ssh/azure_vm_rsa.pub
+          chmod 600 .ssh/azure_vm_rsa.pub
+        env:
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+
+      - name: Terraform Fmt (auto-fix)
+        run: terraform fmt -recursive .
+
+      - name: Terraform Init (remote backend)
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ inputs.action == 'plan' || github.event_name != 'workflow_dispatch' }}
+        run: terraform plan -out=tfplan.plan
+
+      - name: Terraform Plan for Apply
+        if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
+        run: terraform plan -out=tfplan.apply
+
+      - name: Terraform Apply
+        if: ${{ inputs.action == 'apply' && github.event_name == 'workflow_dispatch' }}
+        run: terraform apply tfplan.apply
+
+      - name: Terraform Plan for Destroy
+        if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
+        run: terraform plan -destroy -out=tfplan.destroy
+
+      - name: Terraform Destroy
+        if: ${{ inputs.action == 'destroy' && github.event_name == 'workflow_dispatch' }}
+        run: terraform apply tfplan.destroy
