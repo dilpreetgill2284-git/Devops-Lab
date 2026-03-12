@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   terraform:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, minikube]
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine
