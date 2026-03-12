@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'Linux-Virtual-machine/**'
+      - 'Linux-Virtual-machine/azure/**'
   workflow_dispatch:
     inputs:
       action:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Linux-Virtual-machine
+        working-directory: ./Linux-Virtual-machine/azure
 
     # 👇 Important: Tell azurerm to use OIDC (no client secret)
     env:
