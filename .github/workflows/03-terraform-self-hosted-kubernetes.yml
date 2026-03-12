@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'Linux-Virtual-machine/**'
+      - 'Linux-Virtual-machine/azure/**'
   workflow_dispatch:
     inputs:
       action:
@@ -28,7 +28,7 @@ jobs:
     # Keep your default working dir for Terraform steps
     defaults:
       run:
-        working-directory: ./Linux-Virtual-machine
+        working-directory: ./Linux-Virtual-machine/azure
 
     # OIDC env for azurerm
     env:
