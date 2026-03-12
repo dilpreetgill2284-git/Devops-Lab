@@ -22,9 +22,8 @@ jobs:
   terraform:
     runs-on: [self-hosted, linux, minikube]
 
-    # Run steps inside an Azure CLI container so `az` is available
     container:
-      image: mcr.microsoft.com/azure-cli:latest
+      image: ubuntu:22.04
 
     # Keep your default working dir for Terraform steps
     defaults:
@@ -39,18 +38,18 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
-      # ✅ Run from '/' because repo folder doesn't exist yet (checkout hasn't run)
-      - name: Install git and tar in the job container
+      # ✅ Run from '/' because repo folder doesn't exist yet
+      - name: Install Azure CLI + git + tar
         working-directory: /      # ← the one-line fix
         run: |
-          tdnf makecache -q || true
-          tdnf install -y git tar
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg git tar
+          curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+          az version
 
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Sanity check Azure CLI
-        run: az version
 
       - name: Azure Login (OIDC)
         uses: azure/login@v2
