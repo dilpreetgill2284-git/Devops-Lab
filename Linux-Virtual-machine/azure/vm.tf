@@ -1,5 +1,10 @@
+locals {
+  # Build only the names listed in vm_targets
+  vm_set = toset([for n in var.vm_names : n if contains(var.vm_targets, n)])
+}
+
 resource "azurerm_linux_virtual_machine" "vm" {
-  for_each            = var.vm_names
+  for_each            = local.vm_set            # << only vm01 today
   name                = "${var.prefix}-${each.key}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
