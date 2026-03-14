@@ -23,8 +23,8 @@ jobs:
     # 🔁 Point to ARC runner labels you actually have
     runs-on: [self-hosted, aks]
 
-    # ❌ Not needed: ARC runner already provides a Linux env
-    # container: ubuntu:22.04
+    container: 
+      image: mcr.microsoft.com/azure-cli:2.61.0  # has 'az' preinstalled
 
     # ✔ Keep your Terraform working dir in the repo
     defaults:
