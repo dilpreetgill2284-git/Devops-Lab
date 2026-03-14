@@ -15,23 +15,22 @@ on:
         options: [ plan, apply, destroy ]
 
 permissions:
-  id-token: write   # OIDC to Azure
+  id-token: write
   contents: read
 
 jobs:
   terraform:
-    # 🔁 Point to ARC runner labels you actually have
+    # 👇 land the job on your AKS runner
     runs-on: [self-hosted, aks]
 
-    container: 
-      image: mcr.microsoft.com/azure-cli:2.61.0  # has 'az' preinstalled
+    # 👇 same container you used before (keeps behaviour identical)
+    container:
+      image: ubuntu:22.04
 
-    # ✔ Keep your Terraform working dir in the repo
     defaults:
       run:
         working-directory: ./Linux-Virtual-machine/azure
 
-    # OIDC env for the Azurerm provider
     env:
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
@@ -39,11 +38,23 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
-      # 1) Always checkout first (this creates the repo folder on the runner)
+      # 👇 same install block that worked for you on Minikube
+      - name: Install Azure CLI + git + tar
+        shell: bash
+        working-directory: /
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg git tar unzip
+          curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+          az version
+          # Node optional; keep if any action needs it
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          apt-get install -y nodejs
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2) Log in to Azure via OIDC (no client secret)
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -51,13 +62,11 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      # 3) Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
-      # 4) SSH public key for VM module (if your TF expects it)
       - name: Prepare SSH public key file
         run: |
           mkdir -p .ssh
@@ -66,11 +75,10 @@ jobs:
         env:
           SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
 
-      # 5) Usual TF steps in your azure folder
-      - name: Terraform Fmt (auto-fix)
+      - name: Terraform Fmt
         run: terraform fmt -recursive .
 
-      - name: Terraform Init (remote/local backend per your code)
+      - name: Terraform Init
         run: terraform init
 
       - name: Terraform Validate
