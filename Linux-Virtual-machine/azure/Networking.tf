@@ -16,7 +16,7 @@ resource "azurerm_subnet" "subnet" {
 
 # Network Interface
 resource "azurerm_network_interface" "nic" {
-  for_each            = var.vm_names
+  for_each            = local.vm_set
   name                = "${var.prefix}-nic-${each.key}"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
