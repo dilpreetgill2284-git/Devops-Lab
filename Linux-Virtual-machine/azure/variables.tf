@@ -52,6 +52,13 @@ variable "nic_ipconfig_name" {
   default     = "nic-ipconfig"
 }
 
+# NEW: which VMs to actually create today
+variable "vm_targets" {
+  type    = list(string)
+  default = ["vm01"]           # today: only vm01
+}
+
+
 
 variable "vm_names" {
   type    = set(string)
