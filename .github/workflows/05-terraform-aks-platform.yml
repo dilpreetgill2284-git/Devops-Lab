@@ -1,0 +1,74 @@
+name: 05-terraform-aks-platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose what to run'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./AKS-Azure
+
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ inputs.action == 'plan' }}
+        run: terraform plan
+
+      - name: Terraform Plan for Apply
+        if: ${{ inputs.action == 'apply' }}
+        run: terraform plan -out=tfplan.apply
+
+      - name: Terraform Apply
+        if: ${{ inputs.action == 'apply' }}
+        run: terraform apply -auto-approve tfplan.apply
+
+      - name: Terraform Plan for Destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: terraform plan -destroy -out=tfplan.destroy
+
+      - name: Terraform Destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: terraform apply -auto-approve tfplan.destroy
