@@ -1,4 +1,9 @@
 resource "kubernetes_manifest" "repo_runner" {
+
+  depends_on = [
+    helm_release.arc
+  ]
+
   manifest = {
     apiVersion = "actions.summerwind.dev/v1alpha1"
     kind       = "RunnerDeployment"
