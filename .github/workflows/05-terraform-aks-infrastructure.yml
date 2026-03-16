@@ -1,4 +1,4 @@
-name: 05-terraform-aks-platform
+name: 05-aks-infrastructure
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./AKS-Azure
+        working-directory: ./AKS-Infrastructure
 
     env:
       ARM_USE_OIDC: "true"
@@ -33,11 +33,9 @@ jobs:
 
     steps:
 
-      # ✅ Checkout repo
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ✅ Azure Login using OIDC
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
@@ -45,53 +43,33 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      # ✅ Install kubectl (needed for AKS kubeconfig)
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v4
-
-      # ✅ Get AKS credentials
-      - name: Get AKS Credentials
-        run: |
-          az aks get-credentials \
-            --resource-group rg-dil-aks \
-            --name aks-dil \
-            --overwrite-existing
-
-      # ✅ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
-      # ✅ Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # ✅ Terraform Validate
       - name: Terraform Validate
         run: terraform validate
 
-      # ✅ Terraform Plan
       - name: Terraform Plan
         if: ${{ inputs.action == 'plan' }}
         run: terraform plan
 
-      # ✅ Plan for Apply
       - name: Terraform Plan for Apply
         if: ${{ inputs.action == 'apply' }}
         run: terraform plan -out=tfplan.apply
 
-      # ✅ Apply
       - name: Terraform Apply
         if: ${{ inputs.action == 'apply' }}
         run: terraform apply -auto-approve tfplan.apply
 
-      # ✅ Plan for Destroy
       - name: Terraform Plan for Destroy
         if: ${{ inputs.action == 'destroy' }}
         run: terraform plan -destroy -out=tfplan.destroy
 
-      # ✅ Destroy
       - name: Terraform Destroy
         if: ${{ inputs.action == 'destroy' }}
         run: terraform apply -auto-approve tfplan.destroy
