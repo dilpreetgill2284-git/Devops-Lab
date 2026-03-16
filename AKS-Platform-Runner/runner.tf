@@ -1,9 +1,5 @@
 resource "kubernetes_manifest" "repo_runner" {
 
-  depends_on = [
-    time_sleep.wait_for_arc_crds
-  ]
-
   manifest = {
     apiVersion = "actions.summerwind.dev/v1alpha1"
     kind       = "RunnerDeployment"
