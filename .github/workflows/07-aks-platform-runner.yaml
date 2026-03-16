@@ -1,0 +1,67 @@
+name: 07-aks-platform-runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose what to run'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./AKS-Platform-Runner
+
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Get AKS Credentials
+        run: |
+          az aks get-credentials \
+            --resource-group rg-dil-aks \
+            --name aks-dil \
+            --overwrite-existing
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        if: ${{ inputs.action == 'apply' }}
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ inputs.action == 'destroy' }}
+        run: terraform destroy -auto-approve
