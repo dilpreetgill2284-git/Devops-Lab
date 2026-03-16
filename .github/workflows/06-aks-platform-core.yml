@@ -1,4 +1,4 @@
-name: 06-aks-platform
+name: 06-aks-platform-core
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       action:
         description: 'Choose what to run'
         required: true
-        default: 'plan'
+        default: 'apply'
         type: choice
         options:
           - plan
@@ -23,7 +23,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./AKS-Platform
+        working-directory: ./AKS-Platform-Core
 
     env:
       ARM_USE_OIDC: "true"
@@ -32,7 +32,6 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -55,31 +54,14 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.7.5
 
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        if: ${{ inputs.action == 'plan' }}
-        run: terraform plan
-
-      - name: Terraform Plan for Apply
-        if: ${{ inputs.action == 'apply' }}
-        run: terraform plan -out=tfplan.apply
-
       - name: Terraform Apply
         if: ${{ inputs.action == 'apply' }}
-        run: terraform apply -auto-approve tfplan.apply
-
-      - name: Terraform Plan for Destroy
-        if: ${{ inputs.action == 'destroy' }}
-        run: terraform plan -destroy -out=tfplan.destroy
+        run: terraform apply -auto-approve
 
       - name: Terraform Destroy
         if: ${{ inputs.action == 'destroy' }}
-        run: terraform apply -auto-approve tfplan.destroy
+        run: terraform destroy -auto-approve
