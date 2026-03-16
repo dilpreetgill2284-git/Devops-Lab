@@ -3,4 +3,22 @@ resource "kubernetes_manifest" "repo_runner" {
   depends_on = [
     helm_release.arc
   ]
+
+  manifest = {
+    apiVersion = "actions.summerwind.dev/v1alpha1"
+    kind       = "RunnerDeployment"
+    metadata = {
+      name      = "repo-runner"
+      namespace = "actions-runner-system"
+    }
+    spec = {
+      replicas = 1
+      template = {
+        spec = {
+          repository = "dilpreetgill2284-git/Devops-Lab"
+          labels     = ["self-hosted", "aks"]
+        }
+      }
+    }
+  }
 }
