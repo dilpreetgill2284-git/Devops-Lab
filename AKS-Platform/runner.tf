@@ -1,7 +1,7 @@
 resource "kubernetes_manifest" "repo_runner" {
 
   depends_on = [
-    helm_release.arc
+    time_sleep.wait_for_arc_crds
   ]
 
   manifest = {
