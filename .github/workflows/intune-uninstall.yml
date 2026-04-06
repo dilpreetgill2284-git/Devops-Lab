@@ -55,14 +55,14 @@ jobs:
 
       - name: Update software names in PowerShell script
         run: |
-          sed -i 's|\$software1 = ".*"|\$software1 = "${{ github.event.inputs.software1 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$process1  = ".*"|\$process1  = "${{ github.event.inputs.process1 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$software2 = ".*"|\$software2 = "${{ github.event.inputs.software2 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$process2  = ".*"|\$process2  = "${{ github.event.inputs.process2 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$software3 = ".*"|\$software3 = "${{ github.event.inputs.software3 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$process3  = ".*"|\$process3  = "${{ github.event.inputs.process3 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$software4 = ".*"|\$software4 = "${{ github.event.inputs.software4 }}"|' intune-uninstall/software-uninstall.ps1
-          sed -i 's|\$process4  = ".*"|\$process4  = "${{ github.event.inputs.process4 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$software1 = ".*"|\$software1 = "${{ github.event.inputs.software1 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$process1  = ".*"|\$process1  = "${{ github.event.inputs.process1 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$software2 = ".*"|\$software2 = "${{ github.event.inputs.software2 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$process2  = ".*"|\$process2  = "${{ github.event.inputs.process2 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$software3 = ".*"|\$software3 = "${{ github.event.inputs.software3 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$process3  = ".*"|\$process3  = "${{ github.event.inputs.process3 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$software4 = ".*"|\$software4 = "${{ github.event.inputs.software4 }}"|' intune-software-uninstall/software-uninstall.ps1
+          sed -i 's|\$process4  = ".*"|\$process4  = "${{ github.event.inputs.process4 }}"|' intune-software-uninstall/software-uninstall.ps1
 
       - name: Update device name in playbook
         run: |
