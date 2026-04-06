@@ -1,0 +1,22 @@
+- name: Get device ID for {{ target_device }}
+  uri:
+    url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$filter=deviceName%20eq%20'{{ target_device }}'"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ access_token }}"
+    status_code: 200
+  register: device_response
+
+- name: Skip if device not found
+  debug:
+    msg: "WARNING: {{ target_device }} not found in Intune - skipping"
+  when: device_response.json.value | length == 0
+
+- name: Trigger sync on {{ target_device }}
+  uri:
+    url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices/{{ device_response.json.value[0].id }}/syncDevice"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ access_token }}"
+    status_code: 204
+  when: device_response.json.value | length > 0

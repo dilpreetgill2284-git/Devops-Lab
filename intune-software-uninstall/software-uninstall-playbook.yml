@@ -9,8 +9,8 @@
     client_secret: "{{ lookup('env', 'ANSIBLE_CLIENT_SECRET') }}"
     group_id: "514c4f39-305e-4131-a638-5d2c95bb14d1"
     script_name: "Security-Software-Uninstall"
-    script_path: "/home/dil/intune-scripts/software-uninstall.ps1"
-    target_device: "Harchand-Laptop"
+    script_path: "{{ playbook_dir }}/software-uninstall.ps1"
+    devices: "{{ lookup('file', playbook_dir + '/devices.txt').splitlines() }}"
 
   tasks:
 
@@ -92,32 +92,12 @@
                 groupId: "{{ group_id }}"
         status_code: [200, 204]
 
-    - name: Step 6 - Get device ID
-      uri:
-        url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$filter=deviceName%20eq%20'{{ target_device }}'"
-        method: GET
-        headers:
-          Authorization: "Bearer {{ access_token }}"
-        status_code: 200
-      register: device_response
-
-    - name: Fail if device not found
-      fail:
-        msg: "Device {{ target_device }} not found in Intune. Check the device name."
-      when: device_response.json.value | length == 0
-
-    - name: Set device ID
-      set_fact:
-        device_id: "{{ device_response.json.value[0].id }}"
-
-    - name: Step 7 - Trigger sync
-      uri:
-        url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices/{{ device_id }}/syncDevice"
-        method: POST
-        headers:
-          Authorization: "Bearer {{ access_token }}"
-        status_code: 204
+    - name: Step 6 - Get and sync each device
+      include_tasks: sync-device.yml
+      loop: "{{ devices }}"
+      loop_control:
+        loop_var: target_device
 
     - name: Done
       debug:
-        msg: "Completed - script deployed to {{ target_device }}. Check Intune in 15-30 mins."
+        msg: "Completed - script deployed to {{ devices | join(', ') }}"
