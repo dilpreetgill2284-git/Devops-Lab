@@ -64,9 +64,9 @@ jobs:
           sed -i 's|\$software4 = ".*"|\$software4 = "${{ github.event.inputs.software4 }}"|' intune-software-uninstall/software-uninstall.ps1
           sed -i 's|\$process4  = ".*"|\$process4  = "${{ github.event.inputs.process4 }}"|' intune-software-uninstall/software-uninstall.ps1
 
-      - name: Update device name in playbook
+      - name: Update devices list
         run: |
-          sed -i 's|target_device: ".*"|target_device: "${{ github.event.inputs.device_name }}"|' intune-software-uninstall/software-uninstall-playbook.yml
+          echo "${{ github.event.inputs.device_name }}" > intune-software-uninstall/devices.txt
 
       - name: Run Ansible playbook
         env:
