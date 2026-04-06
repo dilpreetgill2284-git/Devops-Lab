@@ -4,7 +4,7 @@
 $software1 = "Google Chrome"
 $process1  = "chrome"
 
-$software2 = "Python 3.15"   # Use "Python" for all OR "Python 3.14" for specific
+$software2 = "Python 3.14"   # Use "Python" for all OR "Python 3.14" for specific
 $process2  = "python"
 
 $software3 = "Firefox"
