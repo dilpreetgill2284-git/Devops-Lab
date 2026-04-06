@@ -66,13 +66,13 @@ jobs:
 
       - name: Update device name in playbook
         run: |
-          sed -i 's|target_device: ".*"|target_device: "${{ github.event.inputs.device_name }}"|' intune-uninstall/software-uninstall-playbook.yml
+          sed -i 's|target_device: ".*"|target_device: "${{ github.event.inputs.device_name }}"|' intune-software-uninstall/software-uninstall-playbook.yml
 
       - name: Run Ansible playbook
         env:
           ANSIBLE_CLIENT_SECRET: ${{ secrets.ANSIBLE_CLIENT_SECRET }}
         run: |
-          cd intune-uninstall
+          cd intune-software-uninstall
           ansible-playbook software-uninstall-playbook.yml
 
       - name: Summary
