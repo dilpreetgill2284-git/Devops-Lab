@@ -1,0 +1,123 @@
+---
+- name: Uninstall software via Intune
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    tenant_id: "ff330eda-5e31-471b-b324-dfcaf095a6c3"
+    client_id: "ca663637-54b6-43b2-8bb6-64ce3c9f8feb"
+    client_secret: "{{ lookup('env', 'ANSIBLE_CLIENT_SECRET') }}"
+    group_id: "514c4f39-305e-4131-a638-5d2c95bb14d1"
+    script_name: "Security-Software-Uninstall"
+    script_path: "/home/dil/intune-scripts/software-uninstall.ps1"
+    target_device: "Harchand-Laptop"
+
+  tasks:
+
+    - name: Step 1 - Get access token
+      uri:
+        url: "https://login.microsoftonline.com/{{ tenant_id }}/oauth2/v2.0/token"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          grant_type: "client_credentials"
+          client_id: "{{ client_id }}"
+          client_secret: "{{ client_secret }}"
+          scope: "https://graph.microsoft.com/.default"
+        status_code: 200
+      register: token_response
+
+    - name: Set access token
+      set_fact:
+        access_token: "{{ token_response.json.access_token }}"
+
+    - name: Step 2 - Check if script already exists
+      uri:
+        url: "https://graph.microsoft.com/beta/deviceManagement/deviceManagementScripts?$filter=displayName%20eq%20'{{ script_name }}'"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        status_code: 200
+      register: existing_scripts
+
+    - name: Delete old script if exists
+      uri:
+        url: "https://graph.microsoft.com/beta/deviceManagement/deviceManagementScripts/{{ existing_scripts.json.value[0].id }}"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        status_code: [200, 204]
+      when: existing_scripts.json.value | length > 0
+
+    - name: Step 3 - Read and encode script
+      set_fact:
+        script_content: "{{ lookup('file', script_path) | b64encode }}"
+
+    - name: Step 4 - Upload script to Intune
+      uri:
+        url: "https://graph.microsoft.com/beta/deviceManagement/deviceManagementScripts"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          displayName: "{{ script_name }}"
+          description: "Security remediation - managed by Ansible"
+          scriptContent: "{{ script_content }}"
+          runAs32Bit: false
+          runAsAccount: "system"
+          enforceSignatureCheck: false
+          fileName: "uninstall.ps1"
+        status_code: 201
+      register: script_response
+
+    - name: Show script ID
+      debug:
+        msg: "Script created: {{ script_response.json.id }}"
+
+    - name: Step 5 - Assign to group
+      uri:
+        url: "https://graph.microsoft.com/beta/deviceManagement/deviceManagementScripts/{{ script_response.json.id }}/assign"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          deviceManagementScriptAssignments:
+            - "@odata.type": "#microsoft.graph.deviceManagementScriptAssignment"
+              target:
+                "@odata.type": "#microsoft.graph.groupAssignmentTarget"
+                groupId: "{{ group_id }}"
+        status_code: [200, 204]
+
+    - name: Step 6 - Get device ID
+      uri:
+        url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices?$filter=deviceName%20eq%20'{{ target_device }}'"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        status_code: 200
+      register: device_response
+
+    - name: Fail if device not found
+      fail:
+        msg: "Device {{ target_device }} not found in Intune. Check the device name."
+      when: device_response.json.value | length == 0
+
+    - name: Set device ID
+      set_fact:
+        device_id: "{{ device_response.json.value[0].id }}"
+
+    - name: Step 7 - Trigger sync
+      uri:
+        url: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices/{{ device_id }}/syncDevice"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        status_code: 204
+
+    - name: Done
+      debug:
+        msg: "Completed - script deployed to {{ target_device }}. Check Intune in 15-30 mins."

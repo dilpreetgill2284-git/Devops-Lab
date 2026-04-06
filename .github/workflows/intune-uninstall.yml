@@ -1,0 +1,88 @@
+name: Intune - Uninstall Software
+
+on:
+  workflow_dispatch:
+    inputs:
+      software1:
+        description: 'Software 1 name (exact name e.g. Google Chrome)'
+        required: true
+        default: 'Google Chrome'
+      process1:
+        description: 'Software 1 process name (e.g. chrome)'
+        required: true
+        default: 'chrome'
+      software2:
+        description: 'Software 2 name (leave blank if not needed)'
+        required: false
+        default: ''
+      process2:
+        description: 'Software 2 process name (leave blank if not needed)'
+        required: false
+        default: ''
+      software3:
+        description: 'Software 3 name (leave blank if not needed)'
+        required: false
+        default: ''
+      process3:
+        description: 'Software 3 process name (leave blank if not needed)'
+        required: false
+        default: ''
+      software4:
+        description: 'Software 4 name (leave blank if not needed)'
+        required: false
+        default: ''
+      process4:
+        description: 'Software 4 process name (leave blank if not needed)'
+        required: false
+        default: ''
+      device_name:
+        description: 'Device name exactly as shown in Intune (e.g. HARCHAND-LAPTOP)'
+        required: true
+        default: 'HARCHAND-LAPTOP'
+
+jobs:
+  uninstall:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt update -y
+          sudo apt install -y ansible
+
+      - name: Update software names in PowerShell script
+        run: |
+          sed -i 's|\$software1 = ".*"|\$software1 = "${{ github.event.inputs.software1 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$process1  = ".*"|\$process1  = "${{ github.event.inputs.process1 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$software2 = ".*"|\$software2 = "${{ github.event.inputs.software2 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$process2  = ".*"|\$process2  = "${{ github.event.inputs.process2 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$software3 = ".*"|\$software3 = "${{ github.event.inputs.software3 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$process3  = ".*"|\$process3  = "${{ github.event.inputs.process3 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$software4 = ".*"|\$software4 = "${{ github.event.inputs.software4 }}"|' intune-uninstall/software-uninstall.ps1
+          sed -i 's|\$process4  = ".*"|\$process4  = "${{ github.event.inputs.process4 }}"|' intune-uninstall/software-uninstall.ps1
+
+      - name: Update device name in playbook
+        run: |
+          sed -i 's|target_device: ".*"|target_device: "${{ github.event.inputs.device_name }}"|' intune-uninstall/software-uninstall-playbook.yml
+
+      - name: Run Ansible playbook
+        env:
+          ANSIBLE_CLIENT_SECRET: ${{ secrets.ANSIBLE_CLIENT_SECRET }}
+        run: |
+          cd intune-uninstall
+          ansible-playbook software-uninstall-playbook.yml
+
+      - name: Summary
+        run: |
+          echo "==============================="
+          echo "Uninstall request completed"
+          echo "Software 1: ${{ github.event.inputs.software1 }}"
+          echo "Software 2: ${{ github.event.inputs.software2 }}"
+          echo "Software 3: ${{ github.event.inputs.software3 }}"
+          echo "Software 4: ${{ github.event.inputs.software4 }}"
+          echo "Device:     ${{ github.event.inputs.device_name }}"
+          echo "Check Intune Device Status in 15-30 minutes"
+          echo "==============================="
